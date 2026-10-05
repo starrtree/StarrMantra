@@ -403,6 +403,8 @@
   const SUPABASE_URL='https://mxqsgucjrqcirxvviken.supabase.co';
   const SUPABASE_KEY='sb_publishable_0dNb-qxk7hTazt_AOr8ktw_0bxcHrZX';
   const RPC_URL=SUPABASE_URL+'/rest/v1/rpc/';
+  const VIEW_PARAMS=new URLSearchParams(window.location.search);
+  const READ_ONLY=VIEW_PARAMS.get('view')==='1'||VIEW_PARAMS.get('mode')==='view';
   const SWIPE_THRESHOLD=55;
   const starterQuotes=[
     {id:'starter-einstein',text:'Imagination is more important than knowledge.',author:'Albert Einstein',source:'',source_url:'',tag:'Vision'},
@@ -424,6 +426,17 @@
   const toast=document.getElementById('toast');
   const cloudState=document.getElementById('cloudState');
   const cloudText=document.getElementById('cloudText');
+  const openFormBtn=document.getElementById('openForm');
+  const deleteBtn=document.getElementById('deleteBtn');
+
+  if(READ_ONLY){
+    openFormBtn.hidden=true;
+    deleteBtn.hidden=true;
+    form.hidden=true;
+    const actions=document.querySelector('.actions');
+    if(actions)actions.hidden=true;
+    document.body.dataset.mode='view-only';
+  }
 
   function id(){
     return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():'q-'+Date.now()+'-'+Math.random().toString(16).slice(2)
@@ -456,7 +469,7 @@
   function setCloud(ok,label){
     cloudMode=ok;
     cloudState.classList.toggle('cloud-ok',ok);
-    cloudText.textContent=label
+    cloudText.textContent=READ_ONLY&&ok?'View only • Cloud synced':label
   }
 
   async function supaRpc(name,body={}){
@@ -614,6 +627,7 @@
   }
 
   async function createQuote(q){
+    if(READ_ONLY)throw new Error('Read-only view');
     if(cloudMode){
       let key=getWriteKey(false);
       if(!key)throw new Error('Edit key required');
@@ -646,6 +660,7 @@
   }
 
   async function deleteQuote(q){
+    if(READ_ONLY)throw new Error('Read-only view');
     if(cloudMode){
       let key=getWriteKey(false);
       if(!key)throw new Error('Edit key required');
@@ -671,7 +686,7 @@
   document.getElementById('prevBtn').onclick=prev;
   document.getElementById('nextBtn').onclick=next;
   document.getElementById('shuffleBtn').onclick=shuffle;
-  document.getElementById('openForm').onclick=()=>form.classList.add('open');
+  openFormBtn.onclick=()=>{if(!READ_ONLY)form.classList.add('open')};
   document.getElementById('closeForm').onclick=()=>form.classList.remove('open');
   searchInput.addEventListener('input',()=>applyFilter(false));
   window.addEventListener('keydown',e=>{
