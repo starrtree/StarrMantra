@@ -520,7 +520,6 @@
     const card=document.getElementById('quoteCard');
     if(!card){moveIndex(dir);render();transitioning=false;return}
     const outClass=kind==='shuffle'?'shuffle-out':(dir>0?'exit-left':'exit-right');
-    card.style.transform='';
     card.classList.remove('dragging');
     card.classList.add(outClass);
     const done=()=>{
@@ -576,10 +575,8 @@
       dragging=false;card.classList.remove('dragging');
       const final=dragX;startX=startY=null;dragX=0;
       if(final>SWIPE_THRESHOLD){
-        card.style.transform='';
         transition(-1,'swipe')
       }else if(final<-SWIPE_THRESHOLD){
-        card.style.transform='';
         transition(1,'swipe')
       }else{
         card.style.transform=''
