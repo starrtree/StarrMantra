@@ -589,9 +589,36 @@
     card.addEventListener('pointercancel',end)
   }
 
+  function getWriteKey(force=false){
+    const storageKey='starr-mantra-write-key';
+    if(force)localStorage.removeItem(storageKey);
+    let key=localStorage.getItem(storageKey)||'';
+    if(!key){
+      key=(window.prompt('Enter your private Starr Mantra edit key')||'').trim();
+      if(key)localStorage.setItem(storageKey,key)
+    }
+    return key
+  }
+
+  async function cloudWrite(url,options={}){
+    let key=getWriteKey(false);
+    if(!key)throw new Error('Edit key required');
+    const send=()=>fetch(url,{
+      ...options,
+      headers:{...(options.headers||{}),'x-mantra-key':key}
+    });
+    let res=await send();
+    if(res.status===401){
+      key=getWriteKey(true);
+      if(!key)throw new Error('Edit key required');
+      res=await send()
+    }
+    return res
+  }
+
   async function createQuote(q){
     if(cloudMode){
-      const res=await fetch(API_URL,{
+      const res=await cloudWrite(API_URL,{
         method:'POST',
         headers:{'Content-Type':'application/json',Accept:'application/json'},
         body:JSON.stringify(q)
@@ -606,7 +633,7 @@
 
   async function deleteQuote(q){
     if(cloudMode){
-      const res=await fetch(API_URL+'?id='+encodeURIComponent(q.id),{method:'DELETE'});
+      const res=await cloudWrite(API_URL+'?id='+encodeURIComponent(q.id),{method:'DELETE'});
       if(!res.ok)throw new Error('Delete failed');
     }else{
       quotes=quotes.filter(x=>x.id!==q.id);
