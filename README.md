@@ -1,44 +1,40 @@
 # Starr Mantra
 
-A mobile-first Starr-Tree themed mantra and quote book.
+A mobile-first Starr-Tree themed quote and mantra book.
+
+## Live site
+
+https://starrtree.github.io/StarrMantra/
 
 ## Features
 
-- Swipe quote cards left/right on mobile
-- Click left/right arrows on the sides of the card
-- Add new quotes with author, source, and tag
+- Swipe quote cards left/right with touch or pointer gestures
+- Click left/right arrows positioned beside the active card
+- Add quotes with author, source, and tag
 - Search quotes, authors, sources, and tags
-- Shuffle, delete, import, and export quotes
-- Saves automatically to the browser with `localStorage`
-- Responsive layout for phone, tablet, and desktop
-- GitHub Pages deployment workflow included
-
-## Local development
-
-```bash
-npm install
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
+- Shuffle and delete quotes
+- Import/export the quote library as JSON
+- Saves automatically on the current device with `localStorage`
+- Responsive phone, tablet, and desktop layouts
+- No framework, build step, or dependency install required
 
 ## Deployment
 
-This repo includes `.github/workflows/deploy.yml` for GitHub Pages.
+This repository is designed for **GitHub Pages → Deploy from a branch**.
 
-If the first workflow fails because Pages has not been configured yet:
+Use:
 
-1. Open the repository on GitHub.
-2. Go to **Settings → Pages**.
-3. Set **Build and deployment → Source** to **GitHub Actions**.
-4. Re-run the deploy workflow or push another commit.
+- Branch: `main`
+- Folder: `/ (root)`
 
-Expected public URL after deployment:
+The live app is the root `index.html`, so GitHub Pages can serve it directly without GitHub Actions, Vite, React compilation, or a `gh-pages` branch.
+
+## Editing
+
+All current UI, styling, and behavior live in:
 
 ```text
-https://starrtree.github.io/StarrMantra/
+index.html
 ```
+
+That keeps deployment simple and avoids build-related blank screens.
