@@ -1,14 +1,283 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#05070a" />
-    <meta name="description" content="Starr Mantra is a mobile-first quote book for saving and swiping through personal mantras." />
-    <title>Starr Mantra</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#05070a" />
+  <meta name="description" content="Starr Mantra — a swipeable Starr-Tree quote book." />
+  <title>Starr Mantra</title>
+  <style>
+    :root{
+      color-scheme:dark;
+      --bg:#05070a;--panel:rgba(12,16,22,.78);--cream:#fff6df;--muted:rgba(255,246,223,.62);
+      --gold:#ffd56a;--gold2:#f0a93d;--green:#72e4a2;--line:rgba(255,213,106,.2);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--cream)}
+    body{overflow-x:hidden}
+    button,input,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{position:relative;min-height:100svh;overflow:hidden;background:
+      radial-gradient(circle at 12% 0%,rgba(255,213,106,.17),transparent 30rem),
+      radial-gradient(circle at 90% 12%,rgba(114,228,162,.12),transparent 26rem),
+      linear-gradient(180deg,#090c10 0%,#040506 100%)}
+    .stars{position:fixed;inset:0;pointer-events:none;opacity:.32;background-image:radial-gradient(rgba(255,255,255,.46) 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(to bottom,#000,transparent)}
+    .orb{position:fixed;border-radius:50%;filter:blur(70px);pointer-events:none;opacity:.22}
+    .orb.a{width:34rem;height:34rem;left:-18rem;top:-16rem;background:#ffd56a}
+    .orb.b{width:38rem;height:38rem;right:-22rem;bottom:-20rem;background:#50d990}
+    .shell{position:relative;width:min(1120px,calc(100% - 28px));min-height:100svh;margin:auto;padding:max(18px,env(safe-area-inset-top)) 0 max(18px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:16px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:18px;padding-top:4px}
+    .brand{display:flex;gap:14px;align-items:center;min-width:0}
+    .mark{width:78px;height:78px;flex:none;filter:drop-shadow(0 0 22px rgba(255,213,106,.22))}
+    .mark svg{width:100%;height:100%}
+    .kicker{margin:0 0 4px;color:rgba(255,213,106,.72);font-size:.72rem;font-weight:900;letter-spacing:.26em;text-transform:uppercase}
+    h1{margin:0;font-size:clamp(2.4rem,7vw,5rem);line-height:.9;letter-spacing:-.07em}
+    .subtitle{margin:9px 0 0;max-width:620px;color:var(--muted);line-height:1.5}
+    .actions,.tools{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+    .btn,.icon,.arrow{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.055);color:var(--cream);backdrop-filter:blur(12px);transition:.16s ease}
+    .btn:hover,.icon:hover,.arrow:hover{background:rgba(255,255,255,.09);border-color:rgba(255,213,106,.3)}
+    .btn:active,.icon:active,.arrow:active{transform:scale(.96)}
+    .btn{min-height:46px;border-radius:999px;padding:0 16px;display:inline-flex;gap:8px;align-items:center;justify-content:center;font-weight:850}
+    .btn.primary{border:none;background:linear-gradient(135deg,#ffeaa9,#ffc957 52%,#72e4a2);color:#07100b;box-shadow:0 16px 48px rgba(255,201,87,.15)}
+    .icon{width:46px;height:46px;border-radius:50%;display:grid;place-items:center}
+    .icon.danger{color:#ffc3c3;border-color:rgba(255,105,105,.22)}
+    .toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}
+    .search{min-height:52px;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:rgba(8,12,16,.7);display:flex;align-items:center;gap:10px;padding:0 15px;backdrop-filter:blur(16px)}
+    .search input{width:100%;border:0;outline:0;background:transparent;color:var(--cream);font-size:1rem}
+    .search input::placeholder{color:rgba(255,246,223,.34)}
+    .form{display:none;gap:10px;padding:14px;border:1px solid var(--line);border-radius:28px;background:rgba(8,12,16,.84);backdrop-filter:blur(18px)}
+    .form.open{display:grid}
+    .form-head{display:flex;justify-content:space-between;align-items:center}
+    .form textarea,.form input{width:100%;border:1px solid rgba(255,255,255,.11);outline:0;border-radius:18px;background:rgba(0,0,0,.25);color:var(--cream);padding:13px 14px}
+    .form textarea{resize:vertical}
+    .form-grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:10px}
+    .stage{position:relative;flex:1;min-height:500px;display:grid;grid-template-columns:72px minmax(0,1fr) 72px;gap:clamp(8px,2vw,20px);align-items:center}
+    .zone{min-width:0;display:flex;justify-content:center;perspective:1200px}
+    .card{position:relative;width:min(100%,760px);min-height:clamp(410px,59vh,600px);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;padding:clamp(24px,5vw,50px);border:1px solid rgba(255,213,106,.24);border-radius:clamp(30px,5vw,50px);background:
+      radial-gradient(circle at 52% 0%,rgba(255,213,106,.19),transparent 35%),
+      radial-gradient(circle at 0 100%,rgba(114,228,162,.16),transparent 34%),
+      linear-gradient(150deg,rgba(16,22,29,.97),rgba(6,8,11,.96));
+      box-shadow:0 38px 110px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.08);
+      touch-action:pan-y;user-select:none;will-change:transform;transition:transform .2s cubic-bezier(.2,.9,.2,1),border-color .16s ease}
+    .card.dragging{transition:none;border-color:rgba(114,228,162,.48)}
+    .card:before,.card:after{content:"";position:absolute;border:1px solid rgba(255,213,106,.1);border-radius:50%;pointer-events:none}
+    .card:before{width:360px;height:360px;top:-170px;right:-120px}
+    .card:after{width:430px;height:430px;bottom:-245px;left:-180px}
+    .topline,.card footer,.quote{position:relative;z-index:1}
+    .topline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .tag{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,213,106,.2);border-radius:999px;padding:8px 12px;background:rgba(255,213,106,.08);color:#ffeab0;font-weight:850;font-size:.82rem}
+    .staricon{color:var(--gold);font-size:1.2rem;text-shadow:0 0 14px rgba(255,213,106,.5)}
+    .quote{margin:28px 0;font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:clamp(2rem,6vw,4.8rem);line-height:1.04;letter-spacing:-.045em;text-wrap:balance}
+    .card footer{border-top:1px solid rgba(255,213,106,.16);padding-top:20px}
+    .author{margin:0;color:#ffe39b;font-weight:900;font-size:clamp(1.05rem,2vw,1.35rem)}
+    .source{display:block;margin-top:5px;color:rgba(255,246,223,.52)}
+    .swipe{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);color:rgba(255,246,223,.32);font-size:.7rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+    .arrow{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;color:#ffe39b;font-size:2rem;z-index:5}
+    .arrow.left{justify-self:start}.arrow.right{justify-self:end}
+    .empty{width:min(100%,760px);min-height:360px;border:1px solid rgba(255,255,255,.1);border-radius:36px;background:rgba(8,12,16,.74);display:grid;place-items:center;text-align:center;color:var(--muted);padding:30px}
+    .status{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;color:rgba(255,246,223,.48);font-size:.84rem}
+    .pill{min-height:30px;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:0 10px;display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.03)}
+    .hidden{display:none}
+    .toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:rgba(8,12,16,.94);border:1px solid var(--line);border-radius:999px;padding:10px 14px;color:var(--cream);transition:.2s ease;z-index:50}
+    .toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(max-width:780px){
+      .shell{width:min(100% - 18px,620px);gap:13px}
+      header{align-items:flex-start;flex-direction:column}
+      .actions{width:100%;display:grid;grid-template-columns:1fr 1fr}
+      .btn{width:100%}
+      .toolbar{grid-template-columns:1fr}
+      .tools{display:grid;grid-template-columns:repeat(3,1fr)}
+      .icon{width:100%;border-radius:18px}
+      .form-grid{grid-template-columns:1fr}
+      .stage{min-height:520px;grid-template-columns:1fr}
+      .zone{padding:0 42px}
+      .card{min-height:min(63svh,560px)}
+      .arrow{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;font-size:1.55rem;background:rgba(8,12,16,.88)}
+      .arrow:active{transform:translateY(-50%) scale(.96)}
+      .arrow.left{left:0}.arrow.right{right:0}
+      .quote{font-size:clamp(1.95rem,9vw,3.2rem)}
+    }
+    @media(max-width:430px){
+      .shell{width:min(100% - 12px,430px)}
+      .mark{width:66px;height:66px}
+      .brand{gap:10px}
+      .subtitle{font-size:.92rem}
+      .zone{padding:0 34px}
+      .card{padding:22px 20px 34px;border-radius:30px;min-height:60svh}
+      .arrow{width:43px;height:43px}
+      .tag{max-width:76%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .swipe{display:none}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="stars"></div><div class="orb a"></div><div class="orb b"></div>
+    <section class="shell">
+      <header>
+        <div class="brand">
+          <div class="mark" aria-hidden="true">
+            <svg viewBox="0 0 96 96">
+              <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">
+                <path stroke="#ffd56a" d="M48 78C48 60 48 47 48 28"/>
+                <path stroke="#72e4a2" d="M48 43C33 33 25 23 20 11C35 13 47 23 48 37"/>
+                <path stroke="#72e4a2" d="M49 40C62 27 73 20 86 18C82 34 68 43 50 45"/>
+                <path stroke="#72e4a2" d="M47 56C31 48 17 46 7 48C16 62 31 67 47 60"/>
+                <path stroke="#72e4a2" d="M49 57C64 49 78 50 90 55C78 68 61 69 49 61"/>
+                <path stroke="#fff0bd" d="M25 82C37 89 59 89 71 82"/>
+              </g>
+              <circle cx="48" cy="20" r="5" fill="#ffd56a"/><circle cx="31" cy="38" r="3" fill="#fff0bd"/><circle cx="68" cy="35" r="3" fill="#fff0bd"/>
+            </svg>
+          </div>
+          <div>
+            <p class="kicker">Starr-Tree Archive</p>
+            <h1>Starr Mantra</h1>
+            <p class="subtitle">A quote book that grows with you. Swipe the cards, plant new mantras, and keep the wisdom close.</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="openForm">＋ New quote</button>
+          <button class="btn" id="exportBtn">⇩ Export</button>
+        </div>
+      </header>
+
+      <section class="toolbar">
+        <label class="search">⌕<input id="searchInput" placeholder="Search quote, author, tag..." autocomplete="off" /></label>
+        <div class="tools">
+          <button class="icon" id="shuffleBtn" aria-label="Shuffle">⤨</button>
+          <button class="icon" id="importBtn" aria-label="Import">⇧</button>
+          <button class="icon danger" id="deleteBtn" aria-label="Delete">⌫</button>
+          <input class="hidden" id="fileInput" type="file" accept="application/json" />
+        </div>
+      </section>
+
+      <form class="form" id="quoteForm">
+        <div class="form-head"><strong>Plant a new mantra</strong><button class="icon" type="button" id="closeForm" aria-label="Close">×</button></div>
+        <textarea id="quoteText" rows="4" placeholder="Quote text" required></textarea>
+        <div class="form-grid">
+          <input id="quoteAuthor" placeholder="Author" />
+          <input id="quoteSource" placeholder="Book, song, speech..." />
+          <input id="quoteTag" placeholder="Tag" />
+        </div>
+        <button class="btn primary" type="submit">＋ Add to the tree</button>
+      </form>
+
+      <section class="stage" aria-label="Swipeable quote carousel">
+        <button class="arrow left" id="prevBtn" aria-label="Previous quote">‹</button>
+        <div class="zone" id="cardZone"></div>
+        <button class="arrow right" id="nextBtn" aria-label="Next quote">›</button>
+      </section>
+
+      <section class="status">
+        <span class="pill" id="counter">0 / 0</span>
+        <span class="pill" id="savedCount">★ 0 saved</span>
+        <span class="pill">Auto-saves on this device</span>
+      </section>
+    </section>
+    <div class="toast" id="toast"></div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'starr-mantra-quotes-v2';
+    const SWIPE_THRESHOLD = 55;
+    const starterQuotes = [
+      {id:id(),text:'Imagination is more important than knowledge.',author:'Albert Einstein',source:'',tag:'Vision'},
+      {id:id(),text:'One must still have chaos in oneself to be able to give birth to a dancing star.',author:'Friedrich Nietzsche',source:'Thus Spoke Zarathustra',tag:'Creative Fire'},
+      {id:id(),text:'We know what we are, but know not what we may be.',author:'William Shakespeare',source:'Hamlet',tag:'Becoming'},
+      {id:id(),text:'The people who are crazy enough to think they can change the world are the ones who do.',author:'Apple',source:'Think Different',tag:'Change'}
+    ];
+    let quotes = load();
+    let filtered = quotes.slice();
+    let index = 0;
+    let startX = null, startY = null, dragX = 0, dragging = false;
+
+    const zone = document.getElementById('cardZone');
+    const searchInput = document.getElementById('searchInput');
+    const form = document.getElementById('quoteForm');
+    const toast = document.getElementById('toast');
+
+    function id(){return (crypto && crypto.randomUUID)?crypto.randomUUID():'q-'+Date.now()+'-'+Math.random().toString(16).slice(2)}
+    function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+    function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY));return Array.isArray(x)&&x.length?x:starterQuotes}catch{return starterQuotes}}
+    function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(quotes))}
+    function active(){return filtered[index]||null}
+    function show(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(show.t);show.t=setTimeout(()=>toast.classList.remove('show'),1600)}
+
+    function render(){
+      const q=active();
+      if(!q){zone.innerHTML='<div class="empty"><div><div style="font-size:2rem">✦</div><p>No quotes found. Clear search or add a new mantra.</p></div></div>'}
+      else{
+        zone.innerHTML=`<article class="card" id="quoteCard">
+          <div class="topline"><span class="tag">⌁ ${esc(q.tag||'Mantra')}</span><span class="staricon">✦</span></div>
+          <blockquote class="quote">“${esc(q.text)}”</blockquote>
+          <footer><p class="author">— ${esc(q.author||'Unknown')}</p>${q.source?'<span class="source">'+esc(q.source)+'</span>':''}</footer>
+          <div class="swipe">Swipe left or right</div>
+        </article>`;
+        bindSwipe();
+      }
+      document.getElementById('counter').textContent=filtered.length?`${index+1} / ${filtered.length}`:'0 / 0';
+      document.getElementById('savedCount').textContent=`★ ${quotes.length} saved`;
+    }
+
+    function applyFilter(){
+      const s=searchInput.value.trim().toLowerCase();
+      filtered=!s?quotes.slice():quotes.filter(q=>[q.text,q.author,q.source,q.tag].join(' ').toLowerCase().includes(s));
+      index=0;render();
+    }
+    function next(){if(!filtered.length)return;index=(index+1)%filtered.length;render()}
+    function prev(){if(!filtered.length)return;index=(index-1+filtered.length)%filtered.length;render()}
+
+    function bindSwipe(){
+      const card=document.getElementById('quoteCard'); if(!card)return;
+      card.addEventListener('pointerdown',e=>{
+        if(e.pointerType==='mouse'&&e.button!==0)return;
+        card.setPointerCapture(e.pointerId);startX=e.clientX;startY=e.clientY;dragX=0;dragging=true;card.classList.add('dragging');
+      });
+      card.addEventListener('pointermove',e=>{
+        if(!dragging)return;
+        const dx=e.clientX-startX,dy=e.clientY-startY;
+        if(Math.abs(dx)>Math.abs(dy)){e.preventDefault();dragX=dx;const rot=Math.max(-8,Math.min(8,dragX/22));card.style.transform=`translateX(${dragX}px) rotate(${rot}deg)`}
+      });
+      const end=()=>{
+        if(!dragging)return;dragging=false;card.classList.remove('dragging');
+        if(dragX>SWIPE_THRESHOLD)prev();else if(dragX<-SWIPE_THRESHOLD)next();else card.style.transform='';
+        startX=startY=null;dragX=0;
+      };
+      card.addEventListener('pointerup',end);card.addEventListener('pointercancel',end);
+    }
+
+    document.getElementById('prevBtn').onclick=prev;
+    document.getElementById('nextBtn').onclick=next;
+    document.getElementById('shuffleBtn').onclick=()=>{if(filtered.length<2)return;let n=Math.floor(Math.random()*filtered.length);if(n===index)n=(n+1)%filtered.length;index=n;render()};
+    document.getElementById('openForm').onclick=()=>form.classList.add('open');
+    document.getElementById('closeForm').onclick=()=>form.classList.remove('open');
+    searchInput.addEventListener('input',applyFilter);
+    window.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')prev();if(e.key==='ArrowRight')next()});
+
+    form.addEventListener('submit',e=>{
+      e.preventDefault();
+      const text=document.getElementById('quoteText').value.trim();if(!text)return;
+      const q={id:id(),text,author:document.getElementById('quoteAuthor').value.trim()||'Unknown',source:document.getElementById('quoteSource').value.trim(),tag:document.getElementById('quoteTag').value.trim()||'Mantra'};
+      quotes.unshift(q);save();form.reset();form.classList.remove('open');searchInput.value='';applyFilter();show('Mantra planted ✦');
+    });
+
+    document.getElementById('deleteBtn').onclick=()=>{
+      const q=active();if(!q)return;
+      quotes=quotes.filter(x=>x.id!==q.id);save();applyFilter();show('Quote removed');
+    };
+
+    document.getElementById('exportBtn').onclick=()=>{
+      const blob=new Blob([JSON.stringify(quotes,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='starr-mantra-quotes.json';a.click();URL.revokeObjectURL(url);
+    };
+    document.getElementById('importBtn').onclick=()=>document.getElementById('fileInput').click();
+    document.getElementById('fileInput').addEventListener('change',e=>{
+      const file=e.target.files&&e.target.files[0];if(!file)return;
+      const r=new FileReader();r.onload=()=>{try{const parsed=JSON.parse(String(r.result));if(!Array.isArray(parsed)||!parsed.length)throw 0;quotes=parsed.filter(x=>x&&x.text).map(x=>({id:x.id||id(),text:String(x.text),author:String(x.author||'Unknown'),source:String(x.source||''),tag:String(x.tag||'Mantra')}));save();searchInput.value='';applyFilter();show('Quotes imported')}catch{show('Could not import file')}e.target.value=''};r.readAsText(file);
+    });
+
+    render();
+  </script>
+</body>
 </html>
